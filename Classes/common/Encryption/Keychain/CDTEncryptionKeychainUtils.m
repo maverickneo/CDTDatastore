@@ -55,6 +55,8 @@ NSString *const CDTENCRYPTION_KEYCHAIN_UTILS_ERROR_DECRYPT_MSG_EMPTY_IV =
 #pragma mark - Public class methods
 + (NSData *)generateRandomBytesInBufferWithLength:(NSUInteger)length
 {
+    NSAssert((size_t)length <= SIZE_T_MAX, @"length %lu out of bound", (unsigned long)length);
+    
     uint8_t randBytes[length];
     
     int rc = SecRandomCopyBytes(kSecRandomDefault, (size_t)length, randBytes);
