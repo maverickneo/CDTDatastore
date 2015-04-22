@@ -30,31 +30,31 @@ extern NSString *const kCDTQTextType;
 /**
  * This function sets the index type to the default setting of "json"
  *
- * @param fieldNames the field names in the index
  * @param indexName the index name
+ * @param fieldNames the field names in the index
  * @return the Index object or nil if arguments passed in were invalid.
  */
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames indexName:(NSString *)indexName;
++ (CDTQIndex *)index:(NSString *)indexName withFields:(NSArray *)fieldNames;
 
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames
-                        indexName:(NSString *)indexName
-                        indexType:(NSString *)indexType;
++ (CDTQIndex *)index:(NSString *)indexName
+          withFields:(NSArray *)fieldNames
+              ofType:(NSString *)indexType;
 
 /**
  * This function handles index specific validation and ensures that the constructed
  * Index object is valid.
  *
- * @param fieldNames the field names in the index
  * @param indexName the index name
+ * @param fieldNames the field names in the index
  * @param indexType the index type (json or text)
  * @param indexSettings the optional settings used to configure the index.
  *                      Only supported parameter is 'tokenize' for text indexes only.
  * @return the Index object or nil if arguments passed in were invalid.
  */
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames
-                        indexName:(NSString *)indexName
-                        indexType:(NSString *)indexType
-                    indexSettings:(NSDictionary *)indexSettings;
++ (CDTQIndex *)index:(NSString *)indexName
+          withFields:(NSArray *)fieldNames
+              ofType:(NSString *)indexType
+        withSettings:(NSDictionary *)indexSettings;
 
 /**
  * Compares the index type and accompanying settings with the passed in arguments.

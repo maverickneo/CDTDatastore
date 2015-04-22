@@ -65,25 +65,22 @@ static NSString *const kCDTQTextDefaultTokenizer = @"simple";
     return self;
 }
 
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames indexName:(NSString *)indexName
++ (CDTQIndex *)index:(NSString *)indexName withFields:(NSArray *)fieldNames
 {
-    return [CDTQIndex instanceWithFields:fieldNames indexName:indexName indexType:kCDTQJsonType];
+    return [CDTQIndex index:indexName withFields:fieldNames ofType:kCDTQJsonType];
 }
 
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames
-                        indexName:(NSString *)indexName
-                        indexType:(NSString *)indexType
++ (CDTQIndex *)index:(NSString *)indexName
+          withFields:(NSArray *)fieldNames
+              ofType:(NSString *)indexType
 {
-    return [CDTQIndex instanceWithFields:fieldNames
-                               indexName:indexName
-                               indexType:indexType
-                           indexSettings:nil];
+    return [CDTQIndex index:indexName withFields:fieldNames ofType:indexType withSettings:nil];
 }
 
-+ (CDTQIndex *)instanceWithFields:(NSArray *)fieldNames
-                        indexName:(NSString *)indexName
-                        indexType:(NSString *)indexType
-                    indexSettings:(NSDictionary *)indexSettings
++ (CDTQIndex *)index:(NSString *)indexName
+          withFields:(NSArray *)fieldNames
+              ofType:(NSString *)indexType
+        withSettings:(NSDictionary *)indexSettings
 {
     if (fieldNames.count == 0) {
         LogError(@"No field names provided.");

@@ -30,7 +30,7 @@ describe(@"When creating an instance of index", ^{
     });
     
     it(@"constructs an index instance with the default index type", ^{
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames indexName:indexName];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames];
         
         expect(index.indexName).to.equal(@"basic");
         expect(index.fieldNames).to.containsAllElements(@[ @"name", @"age" ]);
@@ -39,9 +39,7 @@ describe(@"When creating an instance of index", ^{
     });
     
     it(@"constructs an index instance with the TEXT index type and default index settings", ^{
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"text"];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames ofType:@"text"];
 
         expect(index.indexName).to.equal(@"basic");
         expect(index.fieldNames).to.containsAllElements(@[ @"name", @"age" ]);
@@ -51,46 +49,40 @@ describe(@"When creating an instance of index", ^{
     });
     
     it(@"returns nil when no fields are provided", ^{
-        expect([CDTQIndex instanceWithFields:nil indexName:indexName]).to.beNil;
+        expect([CDTQIndex index:indexName withFields:nil]).to.beNil;
         
-        expect([CDTQIndex instanceWithFields:@[] indexName:indexName]).to.beNil;
+        expect([CDTQIndex index:indexName withFields:@[]]).to.beNil;
     });
     
     it(@"returns nil when no index name is provided", ^{
-        expect([CDTQIndex instanceWithFields:fieldNames indexName:nil]).to.beNil;
+        expect([CDTQIndex index:nil withFields:fieldNames]).to.beNil;
         
-        expect([CDTQIndex instanceWithFields:fieldNames indexName:@""]).to.beNil;
+        expect([CDTQIndex index:@"" withFields:fieldNames]).to.beNil;
     });
     
     it(@"returns nil when index type is specifically nil or blank", ^{
-        expect([CDTQIndex instanceWithFields:fieldNames
-                                   indexName:indexName
-                                   indexType:nil]).to.beNil;
+        expect([CDTQIndex index:indexName withFields:fieldNames ofType:nil]).to.beNil;
         
-        expect([CDTQIndex instanceWithFields:fieldNames
-                                   indexName:indexName
-                                   indexType:@""]).to.beNil;
+        expect([CDTQIndex index:indexName withFields:fieldNames ofType:@""]).to.beNil;
     });
     
     it(@"returns nil when index type is invalid", ^{
-        expect([CDTQIndex instanceWithFields:fieldNames
-                                   indexName:indexName
-                                   indexType:@"blah"]).to.beNil;
+        expect([CDTQIndex index:indexName withFields:fieldNames ofType:@"blah"]).to.beNil;
     });
     
     it(@"returns nil when index settings are invalid", ^{
-        expect([CDTQIndex instanceWithFields:fieldNames
-                                   indexName:indexName
-                                   indexType:@"text"
-                               indexSettings:@{ @"foo": @"bar" }]).to.beNil;
+        expect([CDTQIndex index:indexName
+                     withFields:fieldNames
+                         ofType:@"text"
+                   withSettings:@{ @"foo": @"bar" }]).to.beNil;
     });
     
     it(@"constructs index instance but ignores index settings when appropriate", ^{
         // json indexes do not support index settings.  Index settings will be ignored.
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"json"
-                                           indexSettings:@{ @"tokenize": @"porter" }];
+        CDTQIndex *index = [CDTQIndex index:indexName
+                                 withFields:fieldNames
+                                     ofType:@"json"
+                               withSettings:@{ @"tokenize": @"porter" }];
 
         expect(index.indexName).to.equal(@"basic");
         expect(index.fieldNames).to.containsAllElements(@[ @"name", @"age" ]);
@@ -100,10 +92,10 @@ describe(@"When creating an instance of index", ^{
     
     it(@"constructs index instance and sets index settings when appropriate", ^{
         // text indexes support the tokenize setting.
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"text"
-                                           indexSettings:@{ @"tokenize": @"porter" }];
+        CDTQIndex *index = [CDTQIndex index:indexName
+                                 withFields:fieldNames
+                                     ofType:@"text"
+                               withSettings:@{ @"tokenize": @"porter" }];
 
         expect(index.indexName).to.equal(@"basic");
         expect(index.fieldNames).to.containsAllElements(@[ @"name", @"age" ]);
@@ -125,23 +117,21 @@ describe(@"When comparing index content", ^{
     
     it(@"correctly compares index type inequality", ^{
         // Construct an index instance of default index type "json"
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames indexName:indexName];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames];
         
         expect([index compareIndexTypeTo:@"text" withIndexSettings:nil]).to.equal(NO);
     });
     
     it(@"correctly compares index type equality", ^{
         // Construct an index instance of default index type "json"
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames indexName:indexName];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames];
         
         expect([index compareIndexTypeTo:@"json" withIndexSettings:nil]).to.equal(YES);
     });
     
     it(@"correctly compares index setting inequality", ^{
         // Construct a "text" index instance with default index settings of { "tokenize": "simple" }
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"text"];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames ofType:@"text"];
         
         expect([index compareIndexTypeTo:@"text"
                        withIndexSettings:@"{\"tokenize\":\"porter\"}"]).to.equal(NO);
@@ -149,9 +139,7 @@ describe(@"When comparing index content", ^{
     
     it(@"correctly compares index setting equality", ^{
         // Construct a "text" index instance with default index settings of { "tokenize": "simple" }
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"text"];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames ofType:@"text"];
         
         expect([index compareIndexTypeTo:@"text"
                        withIndexSettings:@"{\"tokenize\":\"simple\"}"]).to.equal(YES);
@@ -170,15 +158,13 @@ describe(@"When retrieving index settings as a String", ^{
     });
     
     it(@"returns a String representation of the index settings", ^{
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames
-                                               indexName:indexName
-                                               indexType:@"text"];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames ofType:@"text"];
         
         expect([index settingsAsJSON]).to.equal(@"{\"tokenize\":\"simple\"}");
     });
     
     it(@"returns nil when appropriate", ^{
-        CDTQIndex *index = [CDTQIndex instanceWithFields:fieldNames indexName:indexName];
+        CDTQIndex *index = [CDTQIndex index:indexName withFields:fieldNames];
         
         expect([index settingsAsJSON]).to.beNil;
     });
