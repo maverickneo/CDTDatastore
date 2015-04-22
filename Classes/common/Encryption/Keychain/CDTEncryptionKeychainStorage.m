@@ -58,11 +58,11 @@
     CDTEncryptionKeychainData *encryptionData = nil;
 
     NSData *data = nil;
-    NSMutableDictionary *lookupDict =
+    NSMutableDictionary *query =
         [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
                                                              account:self.account];
 
-    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)lookupDict, (void *)&data);
+    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
     if (err == noErr) {
         id unarchiveObject = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 
