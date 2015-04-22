@@ -18,7 +18,8 @@
 
 #import "CDTLogging.h"
 
-#define CDTENCRYPTION_KEYCHAINSTORAGE_KEY_DOCUMENTID @"CDTDatastoreKey"
+#define CDTENCRYPTION_KEYCHAINSTORAGE_SERVICE_VALUE \
+    @"com.cloudant.sync.CDTEncryptionKeychainStorage.service"
 
 @interface CDTEncryptionKeychainStorage ()
 
@@ -40,7 +41,7 @@
     self = [super init];
     if (self) {
         if (identifier) {
-            _service = CDTENCRYPTION_KEYCHAINSTORAGE_KEY_DOCUMENTID;
+            _service = CDTENCRYPTION_KEYCHAINSTORAGE_SERVICE_VALUE;
             _account = identifier;
         } else {
             self = nil;
