@@ -69,7 +69,8 @@
         if ([unarchiveObject isKindOfClass:[CDTEncryptionKeychainData class]]) {
             encryptionData = unarchiveObject;
         } else {
-            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Data found can is not as expected");
+            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
+                       @"Data found in keychain does not have the expected type. Discard it");
         }
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
