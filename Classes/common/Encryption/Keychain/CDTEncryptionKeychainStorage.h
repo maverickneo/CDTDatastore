@@ -75,6 +75,6 @@
 
  @return YES (data found) or NO (data not found)
  */
-- (BOOL)areThereEncryptionKeyData;
+- (BOOL)encryptionKeyDataExists;
 
 @end

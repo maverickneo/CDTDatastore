@@ -127,16 +127,16 @@
     return success;
 }
 
-- (BOOL)areThereEncryptionKeyData
+- (BOOL)encryptionKeyDataExists
 {
     BOOL result = NO;
 
     NSData *data = nil;
-    NSMutableDictionary *lookupDict =
+    NSMutableDictionary *query =
         [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
                                                              account:self.account];
 
-    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)lookupDict, (void *)&data);
+    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
     if (err == noErr) {
         result = ((data != nil) && (data.length > 0));
 
