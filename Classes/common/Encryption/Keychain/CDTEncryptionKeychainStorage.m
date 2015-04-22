@@ -81,7 +81,7 @@
 
 - (BOOL)saveEncryptionKeyData:(CDTEncryptionKeychainData *)data
 {
-    BOOL worked = NO;
+    BOOL success = NO;
 
     NSData *archivedData = [NSKeyedArchiver archivedDataWithRootObject:data];
     NSMutableDictionary *dataStoreDict =
@@ -91,22 +91,22 @@
 
     OSStatus err = SecItemAdd((__bridge CFDictionaryRef)dataStoreDict, nil);
     if (err == noErr) {
-        worked = YES;
+        success = YES;
     } else if (err == errSecDuplicateItem) {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Doc already exists in keychain");
-        worked = NO;
+        success = NO;
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
                    @"Unable to store Doc in keychain, SecItemAdd returned: %d", err);
-        worked = NO;
+        success = NO;
     }
 
-    return worked;
+    return success;
 }
 
 - (BOOL)clearEncryptionKeyData
 {
-    BOOL worked = NO;
+    BOOL success = NO;
 
     NSMutableDictionary *dict =
         [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
@@ -118,13 +118,13 @@
     OSStatus err = SecItemDelete((__bridge CFDictionaryRef)dict);
 
     if (err == noErr || err == errSecItemNotFound) {
-        worked = YES;
+        success = YES;
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
                    @"Error getting DPK doc from keychain, SecItemDelete returned: %d", err);
     }
 
-    return worked;
+    return success;
 }
 
 - (BOOL)areThereEncryptionKeyData
