@@ -99,14 +99,14 @@
                  @"IV is mandatory");
 }
 
-- (void)testInitFailsIfIterationsValueIsNegative
+- (void)testInitFailsIfIterationsValueIsNotPositiveOrZero
 {
     XCTAssertNil([[CDTEncryptionKeychainData alloc] initWithEncryptedDPK:self.defaultEncryptedDPK
                                                                     salt:self.defaultSalt
                                                                       iv:self.defaultIv
                                                               iterations:-1
                                                                  version:self.defaultVersion],
-                 @"Iterations value has to be a positive number");
+                 @"Iterations value has to be positive or zero");
 }
 
 - (void)testArchiveUnarchiveData

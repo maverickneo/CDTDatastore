@@ -66,8 +66,9 @@
             _iterations = iterations;
             _version = version;
         } else {
-            CDTLogError(CDTDATASTORE_LOG_CONTEXT,
-                        @"All params are mandatory (and iterations has to be positive)");
+            CDTLogError(
+                CDTDATASTORE_LOG_CONTEXT,
+                @"All params are mandatory (and iterations value has to be positive or zero)");
 
             self = nil;
         }
