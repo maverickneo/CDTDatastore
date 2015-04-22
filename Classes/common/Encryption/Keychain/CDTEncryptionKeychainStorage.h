@@ -25,8 +25,9 @@
  one.
 
  Each CDTEncryptionKeychainData is bound to a specific identifier and all of them are grouped in
- the keychain by service. This means that if you use the same identifier to store other data in the
- keychain it will not conflict with these values.
+ the keychain by service (servide name defined with CDTENCRYPTION_KEYCHAINSTORAGE_SERVICE_VALUE).
+ This means that if you use the same identifier to store other data in the keychain it will not
+ conflict with these values.
 
  @see CDTEncryptionKeychainData
  */
