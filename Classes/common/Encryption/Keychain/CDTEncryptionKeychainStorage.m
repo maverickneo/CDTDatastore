@@ -190,8 +190,7 @@
 
     [genericPasswordQuery setObject:data forKey:(__bridge id<NSCopying>)(kSecValueData)];
 
-#warning This does not look like the best option
-    [genericPasswordQuery setObject:(__bridge id)(kSecAttrAccessibleAlways)
+    [genericPasswordQuery setObject:(__bridge id)(kSecAttrAccessibleAfterFirstUnlock)
                              forKey:(__bridge id<NSCopying>)(kSecAttrAccessible)];
 
     return genericPasswordQuery;
