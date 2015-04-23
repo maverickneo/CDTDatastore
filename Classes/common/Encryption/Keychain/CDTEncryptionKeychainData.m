@@ -38,16 +38,21 @@
 
 - (id)initWithCoder:(NSCoder *)aDecoder
 {
-    NSData *encryptedDPK = [aDecoder decodeObjectForKey:CDTENCRYPTION_KEYCHAINDATA_KEY_DPK];
-    NSData *salt = [aDecoder decodeObjectForKey:CDTENCRYPTION_KEYCHAINDATA_KEY_SALT];
-    NSData *iv = [aDecoder decodeObjectForKey:CDTENCRYPTION_KEYCHAINDATA_KEY_IV];
-    NSInteger iterations = [aDecoder decodeIntegerForKey:CDTENCRYPTION_KEYCHAINDATA_KEY_ITERATIONS];
-    NSString *version = [aDecoder decodeObjectForKey:CDTENCRYPTION_KEYCHAINDATA_KEY_VERSION];
+    NSData *encryptedDPK =
+        [aDecoder decodeObjectOfClass:[NSData class] forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_DPK];
+    NSData *salt =
+        [aDecoder decodeObjectOfClass:[NSData class] forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_SALT];
+    NSData *iv =
+        [aDecoder decodeObjectOfClass:[NSData class] forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_IV];
+    NSNumber *iterations = [aDecoder decodeObjectOfClass:[NSNumber class]
+                                                  forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_ITERATIONS];
+    NSString *version = [aDecoder decodeObjectOfClass:[NSString class]
+                                               forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_VERSION];
 
     return [self initWithEncryptedDPK:encryptedDPK
                                  salt:salt
                                    iv:iv
-                           iterations:iterations
+                           iterations:[iterations integerValue]
                               version:version];
 }
 
@@ -78,6 +83,8 @@
 }
 
 #pragma mark - NSCoding methods
++ (BOOL)supportsSecureCoding { return YES; }
+
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
     [aCoder encodeObject:self.encryptedDPK forKey:CDTENCRYPTION_KEYCHAINDATA_KEY_DPK];

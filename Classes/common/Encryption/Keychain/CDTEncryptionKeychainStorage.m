@@ -19,7 +19,10 @@
 #import "CDTLogging.h"
 
 #define CDTENCRYPTION_KEYCHAINSTORAGE_SERVICE_VALUE \
-    @"com.cloudant.sync.CDTEncryptionKeychainStorage.service"
+    @"com.cloudant.sync.CDTEncryptionKeychainStorage.keychain.service"
+
+#define CDTENCRYPTION_KEYCHAINSTORAGE_ARCHIVE_KEY \
+    @"com.cloudant.sync.CDTEncryptionKeychainStorage.archive.key"
 
 @interface CDTEncryptionKeychainStorage ()
 
@@ -65,14 +68,13 @@
 
     OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
     if (err == noErr) {
-        id unarchiveObject = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+        [unarchiver setRequiresSecureCoding:YES];
 
-        if ([unarchiveObject isKindOfClass:[CDTEncryptionKeychainData class]]) {
-            encryptionData = unarchiveObject;
-        } else {
-            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
-                       @"Data found in keychain does not have the expected type. Discarding it");
-        }
+        encryptionData = [unarchiver decodeObjectOfClass:[CDTEncryptionKeychainData class]
+                                                  forKey:CDTENCRYPTION_KEYCHAINSTORAGE_ARCHIVE_KEY];
+
+        [unarchiver finishDecoding];
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
                    @"Error getting DPK doc from keychain, SecItemCopyMatching returned: %d", err);
@@ -85,7 +87,12 @@
 {
     BOOL success = NO;
 
-    NSData *archivedData = [NSKeyedArchiver archivedDataWithRootObject:data];
+    NSMutableData *archivedData = [NSMutableData data];
+    NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:archivedData];
+    [archiver setRequiresSecureCoding:YES];
+    [archiver encodeObject:data forKey:CDTENCRYPTION_KEYCHAINSTORAGE_ARCHIVE_KEY];
+    [archiver finishEncoding];
+    
     NSMutableDictionary *dataStoreDict =
         [CDTEncryptionKeychainStorage genericPwStoreDictWithService:self.service
                                                             account:self.account

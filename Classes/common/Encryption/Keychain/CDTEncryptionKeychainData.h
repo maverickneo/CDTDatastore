@@ -17,8 +17,8 @@
 #import <Foundation/Foundation.h>
 
 /**
- NSCoding compliant class for data needed to store and retrieve a DPK (Data Protection Key) from
- the keychain.
+ NSSecureCoding compliant class for data needed to store and retrieve a DPK (Data Protection Key)
+ from the keychain.
  
  In general it is not safe storing a DPK, it is a better idea to store an encrypted version of it.
  However the next time we want to use it, we have to decrypt it; therefore it has to saved with
@@ -27,7 +27,7 @@
 
  @see CDTEncryptionKeychainStorage
  */
-@interface CDTEncryptionKeychainData : NSObject <NSCoding>
+@interface CDTEncryptionKeychainData : NSObject <NSSecureCoding>
 
 @property (strong, nonatomic, readonly) NSData *encryptedDPK;
 @property (strong, nonatomic, readonly) NSData *salt;
