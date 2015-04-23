@@ -109,6 +109,9 @@
 }
 
 #pragma mark - Private class methods
+
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+
 + (NSData *)genericPwWithService:(NSString *)service account:(NSString *)account
 {
     NSData *data = nil;
@@ -117,7 +120,7 @@
         [CDTEncryptionKeychainStorage genericPwLookupDictWithService:service account:account];
 
     OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
-    if (err != noErr) {
+    if (err != errSecSuccess) {
         if (err == errSecItemNotFound) {
             CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"DPK doc not found in keychain");
         } else {
@@ -143,7 +146,7 @@
     [dict removeObjectForKey:(__bridge id)(kSecReturnData)];
 
     OSStatus err = SecItemDelete((__bridge CFDictionaryRef)dict);
-    if (err == noErr || err == errSecItemNotFound) {
+    if (err == errSecSuccess || err == errSecItemNotFound) {
         success = YES;
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
@@ -157,7 +160,7 @@
                                                 account:(NSString *)account
 {
     NSMutableDictionary *genericPasswordQuery = [[NSMutableDictionary alloc] init];
-    
+
     [genericPasswordQuery setObject:(__bridge id)kSecClassGenericPassword
                              forKey:(__bridge id)kSecClass];
     [genericPasswordQuery setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
@@ -170,7 +173,7 @@
                              forKey:(__bridge id<NSCopying>)(kSecReturnAttributes)];
     [genericPasswordQuery setObject:(__bridge id)kCFBooleanTrue
                              forKey:(__bridge id<NSCopying>)(kSecReturnData)];
-    
+
     return genericPasswordQuery;
 }
 
@@ -186,7 +189,7 @@
                                                                data:data];
 
     OSStatus err = SecItemAdd((__bridge CFDictionaryRef)dataStoreDict, nil);
-    if (err == noErr) {
+    if (err == errSecSuccess) {
         success = YES;
     } else if (err == errSecDuplicateItem) {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Doc already exists in keychain");
@@ -205,7 +208,7 @@
                                                   data:(NSData *)data
 {
     NSMutableDictionary *genericPasswordQuery = [[NSMutableDictionary alloc] init];
-    
+
     [genericPasswordQuery setObject:(__bridge id)kSecClassGenericPassword
                              forKey:(__bridge id)kSecClass];
     [genericPasswordQuery setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
@@ -218,5 +221,118 @@
 
     return genericPasswordQuery;
 }
+
+#else
+
++ (NSData *)genericPwWithService:(NSString *)service account:(NSString *)account
+{
+    NSData *data = nil;
+
+    const char *serviceUTF8Str = service.UTF8String;
+    UInt32 serviceUTF8StrLength = (UInt32)strlen(serviceUTF8Str);
+
+    const char *accountUTF8Str = account.UTF8String;
+    UInt32 accountUTF8StrLength = (UInt32)strlen(accountUTF8Str);
+
+    void *passwordData = NULL;
+    UInt32 passwordDataLength = 0;
+
+    OSStatus err = SecKeychainFindGenericPassword(NULL, serviceUTF8StrLength, serviceUTF8Str,
+                                                  accountUTF8StrLength, accountUTF8Str,
+                                                  &passwordDataLength, &passwordData, NULL);
+    if (err == errSecSuccess) {
+        data = [NSData dataWithBytes:passwordData length:passwordDataLength];
+
+        SecKeychainItemFreeContent(NULL, passwordData);
+    } else if (err == errSecItemNotFound) {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"DPK doc not found in keychain");
+    } else {
+        CDTLogWarn(
+            CDTDATASTORE_LOG_CONTEXT,
+            @"Error getting DPK doc from keychain, SecKeychainFindGenericPassword returned: %d",
+            err);
+    }
+
+    return data;
+}
+
++ (BOOL)deleteGenericPwWithService:(NSString *)service account:(NSString *)account
+{
+    // Finf the item
+    const char *serviceUTF8Str = service.UTF8String;
+    UInt32 serviceUTF8StrLength = (UInt32)strlen(serviceUTF8Str);
+
+    const char *accountUTF8Str = account.UTF8String;
+    UInt32 accountUTF8StrLength = (UInt32)strlen(accountUTF8Str);
+
+    SecKeychainItemRef itemRef = NULL;
+
+    OSStatus err =
+        SecKeychainFindGenericPassword(NULL, serviceUTF8StrLength, serviceUTF8Str,
+                                       accountUTF8StrLength, accountUTF8Str, NULL, NULL, &itemRef);
+    if (err != errSecSuccess) {
+        if (err == errSecItemNotFound) {
+            return YES;
+        }
+
+        CDTLogWarn(
+            CDTDATASTORE_LOG_CONTEXT,
+            @"Error getting DPK doc from keychain, SecKeychainFindGenericPassword returned: %d",
+            err);
+
+        return NO;
+    }
+
+    // Delete the item
+    BOOL success = YES;
+
+    err = SecKeychainItemDelete(itemRef);
+    if (err != errSecSuccess) {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
+                   @"Error getting DPK doc from keychain, SecKeychainItemDelete returned: %d", err);
+
+        success = NO;
+    }
+
+    CFRelease(itemRef);
+
+    return success;
+}
+
++ (BOOL)storeGenericPwWithService:(NSString *)service
+                          account:(NSString *)account
+                             data:(NSData *)data
+{
+    BOOL success = NO;
+
+    const char *serviceUTF8Str = service.UTF8String;
+    UInt32 serviceUTF8StrLength = (UInt32)strlen(serviceUTF8Str);
+
+    const char *accountUTF8Str = account.UTF8String;
+    UInt32 accountUTF8StrLength = (UInt32)strlen(accountUTF8Str);
+
+    const void *passwordData = data.bytes;
+    UInt32 passwordDataLength = (UInt32)data.length;
+
+    OSStatus err = SecKeychainAddGenericPassword(NULL, serviceUTF8StrLength, serviceUTF8Str,
+                                                 accountUTF8StrLength, accountUTF8Str,
+                                                 passwordDataLength, passwordData, NULL);
+
+    if (err == errSecSuccess) {
+        success = YES;
+    } else if (err == errSecDuplicateItem) {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Doc already exists in keychain");
+        success = NO;
+    } else {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
+                   @"Unable to store Doc in keychain, SecKeychainAddGenericPassword returned: %d",
+                   err);
+        success = NO;
+    }
+
+    return success;
+}
+
+#endif
 
 @end
