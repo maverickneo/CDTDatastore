@@ -61,13 +61,9 @@
 {
     CDTEncryptionKeychainData *encryptionData = nil;
 
-    NSData *data = nil;
-    NSMutableDictionary *query =
-        [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
-                                                             account:self.account];
-
-    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
-    if (err == noErr) {
+    NSData *data =
+        [CDTEncryptionKeychainStorage genericPwWithService:self.service account:self.account];
+    if (data) {
         NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
         [unarchiver setRequiresSecureCoding:YES];
 
@@ -75,9 +71,6 @@
                                                   forKey:CDTENCRYPTION_KEYCHAINSTORAGE_ARCHIVE_KEY];
 
         [unarchiver finishDecoding];
-    } else {
-        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
-                   @"Error getting DPK doc from keychain, SecItemCopyMatching returned: %d", err);
     }
 
     return encryptionData;
@@ -85,47 +78,71 @@
 
 - (BOOL)saveEncryptionKeyData:(CDTEncryptionKeychainData *)data
 {
-    BOOL success = NO;
-
     NSMutableData *archivedData = [NSMutableData data];
-    NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:archivedData];
+    NSKeyedArchiver *archiver =
+        [[NSKeyedArchiver alloc] initForWritingWithMutableData:archivedData];
     [archiver setRequiresSecureCoding:YES];
     [archiver encodeObject:data forKey:CDTENCRYPTION_KEYCHAINSTORAGE_ARCHIVE_KEY];
     [archiver finishEncoding];
-    
-    NSMutableDictionary *dataStoreDict =
-        [CDTEncryptionKeychainStorage genericPwStoreDictWithService:self.service
-                                                            account:self.account
-                                                               data:archivedData];
 
-    OSStatus err = SecItemAdd((__bridge CFDictionaryRef)dataStoreDict, nil);
-    if (err == noErr) {
-        success = YES;
-    } else if (err == errSecDuplicateItem) {
-        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Doc already exists in keychain");
-        success = NO;
-    } else {
-        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
-                   @"Unable to store Doc in keychain, SecItemAdd returned: %d", err);
-        success = NO;
-    }
+    BOOL success = [CDTEncryptionKeychainStorage storeGenericPwWithService:self.service
+                                                                   account:self.account
+                                                                      data:archivedData];
 
     return success;
 }
 
 - (BOOL)clearEncryptionKeyData
 {
+    BOOL success =
+        [CDTEncryptionKeychainStorage deleteGenericPwWithService:self.service account:self.account];
+
+    return success;
+}
+
+- (BOOL)encryptionKeyDataExists
+{
+    NSData *data =
+        [CDTEncryptionKeychainStorage genericPwWithService:self.service account:self.account];
+
+    return (data != nil);
+}
+
+#pragma mark - Private class methods
++ (NSData *)genericPwWithService:(NSString *)service account:(NSString *)account
+{
+    NSData *data = nil;
+
+    NSMutableDictionary *query =
+        [CDTEncryptionKeychainStorage genericPwLookupDictWithService:service account:account];
+
+    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
+    if (err != noErr) {
+        if (err == errSecItemNotFound) {
+            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"DPK doc not found in keychain");
+        } else {
+            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
+                       @"Error getting DPK doc from keychain, SecItemCopyMatching returned: %d",
+                       err);
+        }
+
+        data = nil;
+    }
+
+    return data;
+}
+
++ (BOOL)deleteGenericPwWithService:(NSString *)service account:(NSString *)account
+{
     BOOL success = NO;
 
     NSMutableDictionary *dict =
-        [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
-                                                             account:self.account];
+        [CDTEncryptionKeychainStorage genericPwLookupDictWithService:service account:account];
     [dict removeObjectForKey:(__bridge id)(kSecMatchLimit)];
     [dict removeObjectForKey:(__bridge id)(kSecReturnAttributes)];
     [dict removeObjectForKey:(__bridge id)(kSecReturnData)];
 
     OSStatus err = SecItemDelete((__bridge CFDictionaryRef)dict);
-
     if (err == noErr || err == errSecItemNotFound) {
         success = YES;
     } else {
@@ -136,33 +153,6 @@
     return success;
 }
 
-- (BOOL)encryptionKeyDataExists
-{
-    BOOL result = NO;
-
-    NSData *data = nil;
-    NSMutableDictionary *query =
-        [CDTEncryptionKeychainStorage genericPwLookupDictWithService:self.service
-                                                             account:self.account];
-
-    OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, (void *)&data);
-    if (err == noErr) {
-        result = ((data != nil) && (data.length > 0));
-
-        if (!result) {
-            CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Found a match in keychain, but it was empty");
-        }
-    } else if (err == errSecItemNotFound) {
-        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"DPK doc not found in keychain");
-    } else {
-        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
-                   @"Error getting DPK doc from keychain, SecItemCopyMatching returned: %d", err);
-    }
-
-    return result;
-}
-
-#pragma mark - Private class methods
 + (NSMutableDictionary *)genericPwLookupDictWithService:(NSString *)service
                                                 account:(NSString *)account
 {
@@ -182,6 +172,32 @@
                              forKey:(__bridge id<NSCopying>)(kSecReturnData)];
     
     return genericPasswordQuery;
+}
+
++ (BOOL)storeGenericPwWithService:(NSString *)service
+                          account:(NSString *)account
+                             data:(NSData *)data
+{
+    BOOL success = NO;
+
+    NSMutableDictionary *dataStoreDict =
+        [CDTEncryptionKeychainStorage genericPwStoreDictWithService:service
+                                                            account:account
+                                                               data:data];
+
+    OSStatus err = SecItemAdd((__bridge CFDictionaryRef)dataStoreDict, nil);
+    if (err == noErr) {
+        success = YES;
+    } else if (err == errSecDuplicateItem) {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT, @"Doc already exists in keychain");
+        success = NO;
+    } else {
+        CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
+                   @"Unable to store Doc in keychain, SecItemAdd returned: %d", err);
+        success = NO;
+    }
+
+    return success;
 }
 
 + (NSMutableDictionary *)genericPwStoreDictWithService:(NSString *)service
