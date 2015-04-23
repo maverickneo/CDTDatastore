@@ -71,7 +71,7 @@
             encryptionData = unarchiveObject;
         } else {
             CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
-                       @"Data found in keychain does not have the expected type. Discard it");
+                       @"Data found in keychain does not have the expected type. Discarding it");
         }
     } else {
         CDTLogWarn(CDTDATASTORE_LOG_CONTEXT,
